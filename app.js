@@ -8,7 +8,44 @@ document.addEventListener('DOMContentLoaded', function() {
     initContactForm();
     initAnimatedCounters();
     initScrollAnimations();
+    initParallaxEffects();
+    initCursorEffects();
+    initSmoothReveal();
+    initScrollProgressBar();
 });
+
+// Scroll Progress Bar
+function initScrollProgressBar() {
+    const progressBar = document.querySelector('.scroll-progress-bar');
+    const backToTop = document.getElementById('back-to-top');
+
+    window.addEventListener('scroll', () => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrollPercentage = (scrollTop / scrollHeight) * 100;
+
+        if (progressBar) {
+            progressBar.style.width = scrollPercentage + '%';
+        }
+
+        if (backToTop) {
+            if (scrollTop > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        }
+    });
+
+    if (backToTop) {
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    }
+}
 
 // Navigation Functionality
 function initNavigation() {
@@ -317,12 +354,16 @@ function initAnimatedCounters() {
         }
     }
 
-    // Trigger animation when stats section is visible
+    // Trigger animation when stats section is visible with enhanced effect
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting && !counterAnimated) {
                 counterAnimated = true;
-                animateCounters();
+                counters.forEach((counter, index) => {
+                    setTimeout(() => {
+                        animateCounter(counter);
+                    }, index * 200);
+                });
             }
         });
     }, { threshold: 0.5 });
@@ -338,9 +379,12 @@ function initScrollAnimations() {
     const animationElements = document.querySelectorAll('.service-card, .portfolio-item, .team-card, .testimonial-card');
 
     const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
+        entries.forEach((entry, index) => {
             if (entry.isIntersecting) {
-                entry.target.classList.add('animate-fade-in');
+                setTimeout(() => {
+                    entry.target.classList.add('animate-fade-in');
+                    entry.target.style.opacity = '1';
+                }, index * 100);
             }
         });
     }, {
@@ -349,7 +393,101 @@ function initScrollAnimations() {
     });
 
     animationElements.forEach(element => {
+        element.style.opacity = '0';
         observer.observe(element);
+    });
+}
+
+// Parallax Effects
+function initParallaxEffects() {
+    let ticking = false;
+
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                const scrolled = window.pageYOffset;
+                const parallaxElements = document.querySelectorAll('.hero__content');
+
+                parallaxElements.forEach(el => {
+                    const speed = 0.5;
+                    el.style.transform = `translateY(${scrolled * speed}px)`;
+                });
+
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+}
+
+// Cursor Effects
+function initCursorEffects() {
+    const cursor = document.createElement('div');
+    cursor.classList.add('custom-cursor');
+    document.body.appendChild(cursor);
+
+    const cursorFollower = document.createElement('div');
+    cursorFollower.classList.add('custom-cursor-follower');
+    document.body.appendChild(cursorFollower);
+
+    let mouseX = 0, mouseY = 0;
+    let followerX = 0, followerY = 0;
+
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+
+        cursor.style.left = mouseX + 'px';
+        cursor.style.top = mouseY + 'px';
+    });
+
+    function animateFollower() {
+        const dx = mouseX - followerX;
+        const dy = mouseY - followerY;
+
+        followerX += dx * 0.1;
+        followerY += dy * 0.1;
+
+        cursorFollower.style.left = followerX + 'px';
+        cursorFollower.style.top = followerY + 'px';
+
+        requestAnimationFrame(animateFollower);
+    }
+
+    animateFollower();
+
+    const interactiveElements = document.querySelectorAll('a, button, .btn, .filter-btn, .service-card, .portfolio-item, .team-card');
+
+    interactiveElements.forEach(el => {
+        el.addEventListener('mouseenter', () => {
+            cursor.classList.add('cursor-hover');
+            cursorFollower.classList.add('cursor-hover');
+        });
+
+        el.addEventListener('mouseleave', () => {
+            cursor.classList.remove('cursor-hover');
+            cursorFollower.classList.remove('cursor-hover');
+        });
+    });
+}
+
+// Smooth Reveal Animation
+function initSmoothReveal() {
+    const sections = document.querySelectorAll('section');
+
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('section-revealed');
+            }
+        });
+    }, {
+        threshold: 0.15
+    });
+
+    sections.forEach(section => {
+        section.classList.add('section-reveal');
+        revealObserver.observe(section);
     });
 }
 
@@ -385,6 +523,16 @@ smoothScrollPolyfill();
 // Add loading class removal
 window.addEventListener('load', () => {
     document.body.classList.add('loaded');
+
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+            setTimeout(() => {
+                loadingScreen.remove();
+            }, 500);
+        }, 1000);
+    }
 });
 
 // Handle resize events
